@@ -16,12 +16,13 @@ It helps developers avoid missing variables, catch hardcoded secrets in code, an
 - 🔍 **Compare**: Check differences between `.env` files (e.g., `.env` vs `.env.production`)
 - ⚡ **Generate**: Create a `.env.example` automatically from an existing `.env`
 - 🛡️ **Scan**: Detect **hardcoded secrets** (API keys, tokens, DB URLs) with severity levels
+- 🔧 **Fix**: Interactively move hardcoded secrets to `.env` and replace them in code
 - ✅ **Validate**: Ensure `.env` files have all required variables
 - 📊 **JSON Output**: Perfect for CI/CD pipelines
 - 🚫 **Smart Ignoring**: Use `.shieldxignore` to skip files
 - 🎯 **Exit Codes**: Non-zero exit on issues for CI/CD integration
 - 📦 Lightweight: Zero bloat
-- 🔒 Security-first: 28+ secret pattern detectors with severity levels
+- 🔒 Security-first: 30+ secret pattern detectors with severity levels
 
 ---
 
@@ -218,6 +219,32 @@ shieldx validate .env --config required-keys.txt
 
 ---
 
+### 5. Fix hardcoded secrets
+
+Interactively move secrets from your code to `.env`:
+
+```bash
+shieldx fix ./src
+```
+
+**Options:**
+
+- `--auto` - Move all High/Critical secrets automatically
+- `--dry-run` - Preview changes without modifying files
+- `--env-file <file>` - Target `.env` file (default: `.env`)
+
+**Example:**
+ShieldX will find a secret:
+`const KEY = "sk_live_12345";`
+
+And replace it with:
+`const KEY = process.env.STRIPE_LIVE_KEY;`
+
+While adding the following to your `.env`:
+`STRIPE_LIVE_KEY="sk_live_12345"`
+
+---
+
 ## 🔧 Advanced Usage
 
 ### CI/CD Integration
@@ -270,7 +297,7 @@ shieldx scan ./src --json | jq '.issuesFound'
 - [x] `.shieldxignore` support
 - [x] Exit codes for automation
 - [x] GitHub Actions integration
-- [ ] Auto-fix suggestions
+- [x] Auto-fix suggestions
 - [ ] Sync configs across environments
 - [ ] VSCode plugin integration
 - [ ] AI-powered secret detection (v2)

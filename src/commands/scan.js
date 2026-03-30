@@ -22,24 +22,28 @@ const SECRET_PATTERNS = [
   { name: "GitHub Token", pattern: /ghp_[0-9a-zA-Z]{36}/, severity: "high" },
   {
     name: "Password",
-    pattern: /(password\s*=\s*['"].+['"])/i,
+    pattern: /\b(password|pass|passwd)\s*[:=]\s*['"]([^'"]+)['"]/i,
     severity: "high",
   },
-  { name: "Secret", pattern: /(secret\s*=\s*['"].+['"])/i, severity: "high" },
+  {
+    name: "Secret",
+    pattern: /\b(secret|token|key|auth)\s*[:=]\s*['"]([^'"]+)['"]/i,
+    severity: "high",
+  },
   {
     name: "Long String",
-    pattern: /['"][A-Za-z0-9\-_]{32,}['"]/,
+    pattern: /['"][A-Za-z0-9\-_]{50,}['"]/,
     severity: "low",
   },
   {
     name: "Database URL",
-    pattern: /(mongodb|postgres|mysql|redis|amqp):\/\/[^\s'"]+/i,
+    pattern: /(mongodb|postgres|postgresql|mysql|redis|amqp|mssql|sqlite|oracle):\/\/[^\s'"]+/i,
     severity: "high",
   },
   {
-    name: "HTTP URL",
-    pattern: /(https?:\/\/[a-z0-9\.\-]+\/[^\s'"]+)/i,
-    severity: "low",
+    name: "HTTP Credentials",
+    pattern: /https?:\/\/[^/:\s'"]+:[^/:\s'"]+@[^\s'"]+/i,
+    severity: "high",
   },
   {
     name: "Cloud Storage URL",
@@ -57,7 +61,11 @@ const SECRET_PATTERNS = [
     severity: "high",
   },
   { name: "AWS Access Key", pattern: /AKIA[0-9A-Z]{16}/, severity: "high" },
-  { name: "Base64 String", pattern: /[0-9a-zA-Z/+]{40}/, severity: "low" },
+  {
+    name: "Base64 String",
+    pattern: /[a-zA-Z0-9+\/]{64,}={0,2}/,
+    severity: "low",
+  },
   {
     name: "Slack Token",
     pattern: /xox[baprs]-[0-9a-zA-Z-]+/,
@@ -261,6 +269,9 @@ function walk(dir, filelist = [], ignorePatterns = []) {
     "renovate.json",
     "dependabot.yml",
     ".dockerignore",
+    "components.json",
+    "docker-compose.yml",
+    "docker-compose.yaml",
   ];
 
   if (!fs.existsSync(dir)) {
@@ -302,6 +313,77 @@ function walk(dir, filelist = [], ignorePatterns = []) {
   return filelist;
 }
 
+export function getFindings(baseDir, options = {}) {
+  const ignorePatterns = loadIgnorePatterns(baseDir);
+  const whitelist = loadWhitelist(baseDir);
+  const files = walk(baseDir, [], ignorePatterns);
+  
+  let issuesFound = 0;
+  const findings = [];
+  const severityCounts = { critical: 0, high: 0, medium: 0, low: 0 };
+
+  files.forEach((file) => {
+    try {
+      const content = fs.readFileSync(file, "utf-8");
+      const lines = content.split("\n");
+
+      lines.forEach((line, idx) => {
+        const trimmedLine = line.trim();
+
+        // Skip comments - these are common false positives
+        if (
+          trimmedLine.startsWith("//") ||
+          trimmedLine.startsWith("#") ||
+          trimmedLine.startsWith("/*") ||
+          trimmedLine.startsWith("*") ||
+          trimmedLine.startsWith("<!--") ||
+          trimmedLine.startsWith("import ") ||
+          trimmedLine.includes("require(")
+        ) {
+          return;
+        }
+
+        // Skip if it looks like a path
+        if (
+          trimmedLine.startsWith("@/") ||
+          trimmedLine.startsWith("./") ||
+          trimmedLine.startsWith("../")
+        ) {
+          return;
+        }
+
+        SECRET_PATTERNS.forEach(({ name, pattern, severity }) => {
+          if (pattern.test(line)) {
+            // Check if this is whitelisted
+            const lineContent = line.trim();
+            if (isWhitelisted(lineContent, whitelist)) {
+              return;
+            }
+
+            issuesFound++;
+            severityCounts[severity]++;
+
+            const finding = {
+              file,
+              line: idx + 1,
+              content: line.trim(),
+              type: name,
+              severity,
+            };
+            findings.push(finding);
+          }
+        });
+      });
+    } catch (err) {
+      if (options.verbose) {
+        console.log(chalk.gray(`⚠️  Skipped ${file}: ${err.message}`));
+      }
+    }
+  });
+
+  return { findings, files, severityCounts, issuesFound };
+}
+
 export function scanCode(baseDir, options = {}) {
   try {
     // Validate input
@@ -310,116 +392,17 @@ export function scanCode(baseDir, options = {}) {
       process.exit(1);
     }
 
-    const ignorePatterns = loadIgnorePatterns(baseDir);
-    const whitelist = loadWhitelist(baseDir);
-
-    let spinner;
     if (!options.quiet && !options.json) {
       console.log(
         chalk.blue(`🔍 Scanning ${baseDir} for hardcoded secrets...\n`)
       );
-      if (ignorePatterns.length > 0 && options.verbose) {
-        console.log(
-          chalk.gray(
-            `Loaded ${ignorePatterns.length} ignore patterns from .shieldxignore\n`
-          )
-        );
-      }
-      if (whitelist.length > 0 && options.verbose) {
-        console.log(
-          chalk.gray(`Loaded ${whitelist.length} whitelisted patterns\n`)
-        );
-      }
     }
 
-    const files = walk(baseDir, [], ignorePatterns);
-    let issuesFound = 0;
-    const findings = [];
-    const severityCounts = { critical: 0, high: 0, medium: 0, low: 0 };
+    const { findings, files, severityCounts, issuesFound } = getFindings(
+      baseDir,
+      options
+    );
 
-    if (!options.quiet && !options.json) {
-      spinner = ora(`Scanning ${files.length} files...`).start();
-    }
-
-    let scannedCount = 0;
-    files.forEach((file) => {
-      scannedCount++;
-      if (spinner) {
-        spinner.text = `Scanning ${scannedCount}/${files.length} files...`;
-      }
-      try {
-        const content = fs.readFileSync(file, "utf-8");
-        const lines = content.split("\n");
-
-        lines.forEach((line, idx) => {
-          const trimmedLine = line.trim();
-
-          // Skip comments - these are common false positives
-          if (
-            trimmedLine.startsWith("//") ||
-            trimmedLine.startsWith("#") ||
-            trimmedLine.startsWith("/*") ||
-            trimmedLine.startsWith("*") ||
-            trimmedLine.startsWith("<!--")
-          ) {
-            return;
-          }
-
-          SECRET_PATTERNS.forEach(({ name, pattern, severity }) => {
-            if (pattern.test(line)) {
-              // Check if this is whitelisted
-              const lineContent = line.trim();
-              if (isWhitelisted(lineContent, whitelist)) {
-                return;
-              }
-
-              issuesFound++;
-              severityCounts[severity]++;
-
-              const finding = {
-                file,
-                line: idx + 1,
-                content: line.trim(),
-                type: name,
-                severity,
-              };
-              findings.push(finding);
-
-              if (!options.json && !options.quiet) {
-                if (spinner) spinner.stop();
-
-                const severityColor = {
-                  critical: chalk.bgRed.white.bold,
-                  high: chalk.red,
-                  medium: chalk.yellow,
-                  low: chalk.blue,
-                };
-
-                console.log(
-                  severityColor[severity](
-                    `🚨 [${severity.toUpperCase()}] ${name}`
-                  ) + chalk.gray(` in ${file}:${idx + 1}`)
-                );
-                console.log(chalk.yellow(`    ${line.trim()}`));
-                console.log(chalk.green(`    💡 Move this to .env file\n`));
-
-                if (spinner) spinner.start();
-              }
-            }
-          });
-        });
-      } catch (err) {
-        if (options.verbose) {
-          console.log(chalk.gray(`⚠️  Skipped ${file}: ${err.message}`));
-        }
-      }
-    });
-
-    if (spinner) {
-      spinner.succeed(chalk.green(`Scanned ${files.length} files`));
-    }
-
-    // Output results
     if (options.json) {
       console.log(
         JSON.stringify(
@@ -438,6 +421,25 @@ export function scanCode(baseDir, options = {}) {
       console.log(chalk.green("✅ No hardcoded secrets found! 🎉"));
       console.log(chalk.gray(`   Scanned ${files.length} files`));
     } else {
+      findings.forEach((finding) => {
+        if (!options.quiet) {
+          const severityColor = {
+            critical: chalk.bgRed.white.bold,
+            high: chalk.red,
+            medium: chalk.yellow,
+            low: chalk.blue,
+          };
+
+          console.log(
+            severityColor[finding.severity](
+              `🚨 [${finding.severity.toUpperCase()}] ${finding.type}`
+            ) + chalk.gray(` in ${finding.file}:${finding.line}`)
+          );
+          console.log(chalk.yellow(`    ${finding.content}`));
+          console.log(chalk.green(`    💡 Move this to .env file\n`));
+        }
+      });
+
       console.log(chalk.red.bold(`\n⚠️  Security Report:`));
       console.log(chalk.red(`   Total issues: ${issuesFound}`));
       console.log(chalk.gray(`   Files scanned: ${files.length}`));
@@ -454,10 +456,15 @@ export function scanCode(baseDir, options = {}) {
         console.log(chalk.blue(`   Low: ${severityCounts.low}`));
     }
 
-    // Exit with appropriate code
-    process.exit(issuesFound > 0 ? 1 : 0);
+    // Exit with appropriate code if called from CLI
+    if (process.env.NODE_ENV !== "test") {
+      process.exit(issuesFound > 0 ? 1 : 0);
+    }
   } catch (err) {
     console.error(chalk.red(`❌ Error: ${err.message}`));
-    process.exit(1);
+    if (process.env.NODE_ENV !== "test") {
+      process.exit(1);
+    }
   }
 }
+

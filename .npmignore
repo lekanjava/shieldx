@@ -1,0 +1,34 @@
+# ShieldX NPM Ignore
+# Exclude testing and development files from the published package
+
+# Tests
+test/
+test_dir/
+test_supabase.js
+test_intelligent_fix.ts
+jest.config.js
+coverage/
+
+# Development
+node_modules/
+.npmrc
+.github/
+.vscode/
+
+# Environment
+.env*
+!.env.example
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Git
+.git/
+.gitignore
+
+# Misc
+UPGRADE.md
+CHANGELOG.md
+CONTRIBUTING.md

@@ -1,12 +1,12 @@
 {
   "name": "shieldx",
-  "version": "2.0.1",
-  "description": "A CLI tool to compare, sync, and validate .env files (AI-powered soon)",
+  "version": "2.1.0",
+  "description": "A CLI tool to compare, sync, and validate .env files",
   "main": "index.js",
   "scripts": {
-    "test": "jest --coverage",
-    "test:watch": "jest --watch",
-    "test:unit": "jest test/unit"
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage",
+    "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
+    "test:unit": "node --experimental-vm-modules node_modules/jest/bin/jest.js test/unit"
   },
   "keywords": [
     "env",
