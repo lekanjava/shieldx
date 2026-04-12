@@ -7,6 +7,7 @@ import validate from "./commands/validate.js";
 import init from "./commands/init.js";
 import diff from "./commands/diff.js";
 import fix from "./commands/fix.js";
+import audit from "./commands/audit.js";
 
 const program = new Command();
 
@@ -19,7 +20,7 @@ program.configureHelp({
 // Custom help header
 program.addHelpText("beforeAll", () => {
   return `
-${chalk.bold.cyan("🛡️  ShieldX v2.0")}
+${chalk.bold.cyan("🛡️  ShieldX v2.2")}
 ${chalk.gray("━".repeat(50))}
 ${chalk.bold("Secure, compare, and validate .env files with ease")}
 `;
@@ -29,6 +30,14 @@ ${chalk.bold("Secure, compare, and validate .env files with ease")}
 program.addHelpText("after", () => {
   return `
 ${chalk.cyan("📚 Examples:")}
+  ${chalk.gray("# Quick setup")}
+  $ ${chalk.green("shieldx audit")}                   ${chalk.gray(
+    "Full security audit"
+  )}
+  $ ${chalk.green("shieldx audit --json")}            ${chalk.gray(
+    "JSON output for CI/CD"
+  )}
+
   ${chalk.gray("# Quick setup")}
   $ ${chalk.green("shieldx init")}                    ${chalk.gray(
     "Interactive project setup"
@@ -96,7 +105,7 @@ program
   .description(
     "🛡️  A powerful CLI tool to secure, compare, and validate .env files"
   )
-  .version("2.0.1", "-v, --version", "Show version number")
+  .version("2.2.0", "-v, --version", "Show version number")
   .helpOption("-h, --help", "Show help information");
 
 // Init command - Interactive setup
@@ -273,5 +282,37 @@ ${chalk.yellow(
   `
   )
   .action((dir, options) => fix(dir, options));
+
+// Audit command - Full project security audit
+program
+  .command("audit")
+  .alias("a")
+  .description("🔍 Run a full security audit on your project")
+  .option("-j, --json", "Output results in JSON format")
+  .option("-s, --strict", "Fail on any issue (even warnings)")
+  .option("-d, --dir <path>", "Directory to scan for secrets (default: .)")
+  .option("--env-file <file>", "Path to .env file (default: .env)")
+  .addHelpText(
+    "after",
+    `
+${chalk.cyan("Examples:")}
+  $ shieldx audit                        ${chalk.gray("# Full project audit")}
+  $ shieldx a                            ${chalk.gray("# Same using alias")}
+  $ shieldx audit --json                 ${chalk.gray("# JSON output for CI/CD")}
+  $ shieldx audit --strict               ${chalk.gray(
+    "# Fail on any issue"
+  )}
+  $ shieldx audit --dir ./src            ${chalk.gray(
+    "# Scan specific directory"
+  )}
+
+${chalk.yellow("💡 Tip:")} The audit combines ${chalk.green(
+      "scan"
+    )}, ${chalk.green("validate")}, and ${chalk.green(
+      "compare"
+    )} into one report with a security score.
+  `
+  )
+  .action((options) => audit(options));
 
 program.parse(process.argv);

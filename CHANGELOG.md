@@ -2,6 +2,30 @@
 
 All notable changes to ShieldX will be documented in this file.
 
+## [2.2.0] - 2026-04-12
+
+### 🎉 New Feature: Full Security Audit
+
+### Added
+
+- 🔎 **Audit command** - Run a complete security health check with a single command
+
+  - 5 automated checks: gitignore safety, env file existence, env sync, secret scan, empty values
+  - Security score (0–100) with letter grades (A+ through F)
+  - Modern box-drawn CLI output with progress bar and colored indicators
+  - `--json` flag for CI/CD integration with structured output
+  - `--strict` flag to fail on any issue (even warnings)
+  - `--dir` flag to specify scan directory
+  - Actionable recommendations after each audit
+  - Alias: `shieldx a`
+
+### Enhanced
+
+- Updated help text with audit examples
+- Version bumped to 2.2.0
+
+---
+
 ## [1.0.0] - 2025-10-20
 
 ### 🎉 Major Release - Production Ready!

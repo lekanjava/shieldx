@@ -1,6 +1,6 @@
 {
   "name": "shieldx",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "A CLI tool to compare, sync, and validate .env files",
   "main": "index.js",
   "scripts": {

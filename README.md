@@ -1,6 +1,6 @@
 # 🛡️ ShieldX
 
-**ShieldX** is a blazing-fast CLI tool to **compare, sync, validate, and scan** your environment/config files.
+**ShieldX** is a blazing-fast CLI tool to **compare, sync, validate, audit, and scan** your environment/config files.
 It helps developers avoid missing variables, catch hardcoded secrets in code, and keep configs consistent across environments.
 
 > Short. Secure. Smart. — That's ShieldX.
@@ -18,6 +18,7 @@ It helps developers avoid missing variables, catch hardcoded secrets in code, an
 - 🛡️ **Scan**: Detect **hardcoded secrets** (API keys, tokens, DB URLs) with severity levels
 - 🔧 **Fix**: Interactively move hardcoded secrets to `.env` and replace them in code
 - ✅ **Validate**: Ensure `.env` files have all required variables
+- 🔎 **Audit**: Run a **full security health check** with a scored report
 - 📊 **JSON Output**: Perfect for CI/CD pipelines
 - 🚫 **Smart Ignoring**: Use `.shieldxignore` to skip files
 - 🎯 **Exit Codes**: Non-zero exit on issues for CI/CD integration
@@ -245,6 +246,68 @@ While adding the following to your `.env`:
 
 ---
 
+### 6. Full Security Audit
+
+Run a comprehensive security health check across your entire project:
+
+```bash
+shieldx audit
+```
+
+**Options:**
+
+- `-j, --json` - Output in JSON format for CI/CD
+- `-s, --strict` - Fail on any issue (even warnings)
+- `-d, --dir <path>` - Directory to scan (default: `.`)
+- `--env-file <file>` - Path to .env file (default: `.env`)
+
+**What it checks:**
+
+| Check | Description |
+|-------|-------------|
+| 🔒 Gitignore Safety | Ensures `.env` is in `.gitignore` |
+| 📄 Env Files Exist | Verifies `.env` and `.env.example` are present |
+| 🔄 Env Sync | Compares `.env` vs `.env.example` for drift |
+| 🛡️ Secret Scan | Scans codebase for hardcoded secrets |
+| 📋 Empty Values | Flags `.env` keys with no value |
+
+**Example output:**
+
+```
+  ╔══════════════════════════════════════╗
+  ║   🛡️  ShieldX Security Audit          ║
+  ╚══════════════════════════════════════╝
+
+╭────────────────────────────────────────────────────────╮
+│  CHECK RESULTS                                         │
+├────────────────────────────────────────────────────────┤
+│ ● PASS  🔒 Gitignore Safety                           │
+│         .env is protected in .gitignore                │
+│ ● PASS  📄 Env Files Exist                             │
+│         .env and .env.example both present              │
+│ ● WARN  🔄 Env Sync                                    │
+│         2 keys not in .env.example                      │
+│ ● FAIL  🛡️  Secret Scan                                │
+│         3 issue(s) found (1 critical, 2 high)           │
+├────────────────────────────────────────────────────────┤
+│  SECURITY SCORE                                        │
+│  ██████████████░░░░░░░░░░░░░░░░  C 55/100              │
+│  NEEDS ATTENTION                                       │
+╰────────────────────────────────────────────────────────╯
+```
+
+**CI/CD Integration:**
+
+```bash
+# Fail pipeline on any critical/high issues
+shieldx audit --json > audit-report.json
+
+# Strict mode: fail on ANY issue
+shieldx audit --strict
+```
+
+---
+
 ## 🔧 Advanced Usage
 
 ### CI/CD Integration
@@ -298,6 +361,7 @@ shieldx scan ./src --json | jq '.issuesFound'
 - [x] Exit codes for automation
 - [x] GitHub Actions integration
 - [x] Auto-fix suggestions
+- [x] Full project security audit with scoring
 - [ ] Sync configs across environments
 - [ ] VSCode plugin integration
 - [ ] AI-powered secret detection (v2)
