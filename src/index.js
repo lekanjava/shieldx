@@ -1,6 +1,7 @@
 import { Command } from "commander";
 import chalk from "chalk";
 import compare from "./commands/compare.js";
+import { scanDeps } from "./commands/deps.js";
 import generate from "./commands/generate.js";
 import { scanCode } from "./commands/scan.js";
 import validate from "./commands/validate.js";
@@ -314,5 +315,22 @@ ${chalk.yellow("💡 Tip:")} The audit combines ${chalk.green(
   `
   )
   .action((options) => audit(options));
+
+// Deps command - Scan dependencies for typosquatting and malicious packages
+program
+  .command("deps [dir]")
+  .description("📦 Scan package.json for typosquatting and malicious dependencies")
+  .option("-j, --json", "Output results in JSON format")
+  .option("-q, --quiet", "Suppress non-error output")
+  .addHelpText(
+    "after",
+    `
+${chalk.cyan("Examples:")}
+  $ shieldx deps                        ${chalk.gray("# Scan current directory")}
+  $ shieldx deps ./client               ${chalk.gray("# Scan specific directory")}
+  $ shieldx deps --json                 ${chalk.gray("# JSON output for CI/CD")}
+  `
+  )
+  .action((dir, options) => scanDeps(dir, options));
 
 program.parse(process.argv);

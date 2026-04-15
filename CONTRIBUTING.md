@@ -5,7 +5,7 @@ First off, thank you for considering contributing to ShieldX! 🎉
 ## 🚀 Quick Start
 
 1. Fork the repository
-2. Clone your fork: `git clone https://github.com/YOUR_USERNAME/shieldx.git`
+2. Clone your fork: `git clone https://github.com/zeemscript/shieldx.git`
 3. Install dependencies: `npm install`
 4. Link for local development: `npm link`
 5. Create a branch: `git checkout -b feature/amazing-feature`
