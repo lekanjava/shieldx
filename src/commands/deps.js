@@ -7,7 +7,7 @@ const TOP_PACKAGES = [
   "inquirer", "axios", "mongoose", "tailwindcss", "typescript", "jest", 
   "webpack", "eslint", "prettier", "dotenv", "next", "vue", "angular",
   "cross-env", "body-parser", "uuid", "crypto-js", "fs-extra", "uuid",
-  "request", "node-fetch", "underscore"
+  "request", "node-fetch", "underscore", "nest"
 ];
 
 const KNOWN_MALICIOUS = {
