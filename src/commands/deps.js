@@ -6,8 +6,9 @@ const TOP_PACKAGES = [
   "express", "react", "react-dom", "lodash", "moment", "chalk", "commander", 
   "inquirer", "axios", "mongoose", "tailwindcss", "typescript", "jest", 
   "webpack", "eslint", "prettier", "dotenv", "next", "vue", "angular",
-  "cross-env", "body-parser", "uuid", "crypto-js", "fs-extra", "uuid",
-  "request", "node-fetch", "underscore", "nest"
+  "cross-env", "body-parser", "uuid", "crypto-js", "fs-extra",
+  "request", "node-fetch", "underscore", "nest", "vite", "svelte", "rxjs",
+  "zod", "prisma", "graphql", "date-fns", "redux", "cypress", "playwright"
 ];
 
 const KNOWN_MALICIOUS = {
@@ -18,7 +19,13 @@ const KNOWN_MALICIOUS = {
   "rc-all": "Malicious typosquat.",
   "buble": "Deprecated/Vulnerable if certain old versions.",
   "request": "Deprecated. Use 'axios' or 'node-fetch' instead.",
-  "electorn": "Typosquatting of 'electron'. Malicious."
+  "electorn": "Typosquatting of 'electron'. Malicious.",
+  "faker": "Deprecated and sabotaged by author. Use '@faker-js/faker' instead.",
+  "node-ipc": "Sabotaged by author in specific versions.",
+  "colors": "Sabotaged by author in specific versions.",
+  "ua-parser-js": "Compromised versions contained cryptominers.",
+  "coa": "Compromised version 2.0.3+ contains malicious payload.",
+  "rc": "Compromised version 1.2.9+ contains malicious payload."
 };
 
 /**
