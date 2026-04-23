@@ -11,7 +11,7 @@ export default function compare(file1, file2, options = {}) {
 
     const env1 = parseEnv(file1);
     const env2 = parseEnv(file2);
-
+const env3 = parseEnv(file2);
     const keys1 = new Set(Object.keys(env1));
     const keys2 = new Set(Object.keys(env2));
 
